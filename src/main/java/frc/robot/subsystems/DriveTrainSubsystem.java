@@ -10,7 +10,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
@@ -57,7 +57,9 @@ public class DriveTrainSubsystem extends SubsystemBase {
      * GYROSCOPE
      *********************************/
     try {
-      navx_device = new AHRS(SPI.Port.kMXP);
+      if (RobotBase.isReal()) {
+        navx_device = new AHRS();
+      }
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating navX MXP", true);
     }

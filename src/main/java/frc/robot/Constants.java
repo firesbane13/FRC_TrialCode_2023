@@ -15,9 +15,9 @@ package frc.robot;
 public final class Constants {
   public static class DriveTrain {
     public static final int canMotorControllerPort00 = 40;
-    public static final int canMotorControllerPort01 = 40;
-    public static final int canMotorControllerPort02 = 40;
-    public static final int canMotorControllerPort03 = 40;
+    public static final int canMotorControllerPort01 = 41;
+    public static final int canMotorControllerPort02 = 42;
+    public static final int canMotorControllerPort03 = 43;
   }
 
   public static class Joysticks {
