@@ -11,6 +11,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
@@ -198,7 +199,10 @@ public class DriveTrainSubsystem extends SubsystemBase {
     } catch(RuntimeException ex) {
       String err_string = "Drive system error:  " + ex.getMessage();
       DriverStation.reportError(err_string, true);
+      status = false;
     }
+    
+    Timer.delay(0.005);
 
     return status;
   }

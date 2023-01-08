@@ -7,6 +7,7 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.drive.AutobalanceCommand;
 import frc.robot.subsystems.DriveTrainSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 
@@ -32,11 +33,16 @@ public class RobotContainer {
   private DriveTrainSubsystem driveTrainSubsystem = new DriveTrainSubsystem();
 
   /**********************************
-   * CONTROLLERS
+   * CONTROLLERS/JOYSTICKS
    **********************************/
   public CommandJoystick driveControllerLeft = new CommandJoystick(Constants.Joysticks.driveControllerLeftUsbPort);
   public CommandJoystick driveControllerRight = new CommandJoystick(Constants.Joysticks.driveControllerRightUsbPort);
   public CommandJoystick secondaryDriveController = new CommandJoystick(Constants.Joysticks.secondaryDriveControlerUsbPort);
+
+  /**********************************
+   * COMMANDS
+   **********************************/
+  public AutobalanceCommand autobalanceCommand = new AutobalanceCommand(driveTrainSubsystem);
 
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
@@ -72,6 +78,10 @@ public class RobotContainer {
     // cancelling on release.
     m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
     */
+
+    secondaryDriveController.button(Constants.Joysticks.SecondaryDriver.autoBalanceForce).whileTrue(
+      autobalanceCommand
+    );
     
     driveTrainSubsystem.setDefaultCommand(
       new RunCommand(

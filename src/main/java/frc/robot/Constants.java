@@ -24,6 +24,58 @@ public final class Constants {
     public static final int driveControllerLeftUsbPort = 0;
     public static final int driveControllerRightUsbPort = 1;
     public static final int secondaryDriveControlerUsbPort = 2;
+
+    /********************************
+     * Driver Left
+     ********************************/
+    public static class DriverLeft {
+      public static final int trigger = 1;
+      public static final int button02 = 2;
+      public static final int button03 = 3;
+      public static final int button04 = 4;
+      public static final int button05 = 5;
+      public static final int button06 = 6;
+      public static final int button07 = 7;
+      public static final int button08 = 8;
+      public static final int button09 = 9;
+      public static final int button10 = 10;
+      public static final int button11 = 11;
+    }
+
+    /********************************
+     * Driver Right
+     ********************************/
+    public static class DriverRight {
+      public static final int trigger = 1;
+      public static final int button02 = 2;
+      public static final int button03 = 3;
+      public static final int button04 = 4;
+      public static final int button05 = 5;
+      public static final int button06 = 6;
+      public static final int button07 = 7;
+      public static final int button08 = 8;
+      public static final int button09 = 9;
+      public static final int button10 = 10;
+      public static final int button11 = 11;
+    }
+
+    /********************************
+     * Secondary Driver
+     ********************************/
+    public static class SecondaryDriver {
+      public static final int trigger = 1;
+      public static final int button02 = 2;
+      public static final int button03 = 3;
+      public static final int button04 = 4;
+      public static final int button05 = 5;
+      public static final int button06 = 6;
+      public static final int autoBalanceForce = 7;
+      public static final int autoBalanceDisable = 8;
+      public static final int button09 = 9;
+      public static final int button10 = 10;
+      public static final int button11 = 11;
+      public static final int button12 = 12;
+    }
   }
 
   public static class OperatorConstants {
