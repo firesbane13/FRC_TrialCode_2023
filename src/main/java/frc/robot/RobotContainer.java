@@ -98,4 +98,20 @@ public class RobotContainer {
     // An example command will be run in autonomous
     return Autos.exampleAuto(m_exampleSubsystem);
   }
+
+  public void autonomousInit() {
+    driveTrainSubsystem.autonomousInit();
+  }
+
+  public void autonomousPeriodic() {
+    driveTrainSubsystem.autonomousPeriodic();
+  }
+
+  public void simulationInit() {
+    driveTrainSubsystem.simulationInit();
+  }
+
+  public void simulationPeriodic() {
+    driveTrainSubsystem.simulationPeriodic();
+  }
 }

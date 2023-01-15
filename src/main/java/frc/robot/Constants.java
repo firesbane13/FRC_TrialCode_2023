@@ -4,6 +4,10 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N7;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -90,6 +94,31 @@ public final class Constants {
   }
 
   public static class Robot {
-    
+    public static final double kMaxSpeed = 3.0;
+    public static final double kMaxAngularSpeed = Math.PI;
+    public static final double kTrackWidth = 0.381 * 2;
+    public static final double kWheelRadius = 0.0500;
+    public static final int kEncoderResolution = -4096;
+
+    public static final double staticGain = 1;
+    public static final double velocityGain = 3;
+
+    public static final double kVLinear = 1.98;
+    public static final double kALinear = 0.2;
+    public static final double kVAngular = 1.5;
+    public static final double kAAngular = 0.3;
+
+    public static final int numOfMotors = 4;
+    public static final int gearing = 8;
+    public static final Matrix<N7, N1> measurementStdDevs = null;
+  }
+
+  public static class Simulation {
+    public static final int leftEncoderChannelA = 0;
+    public static final int leftEncoderChannelB = 1;
+    public static final int rightEncoderChannelA = 2;
+    public static final int rightEncoderChannelB = 3;
+
+    public static final int gyroPort = 0;
   }
 }
