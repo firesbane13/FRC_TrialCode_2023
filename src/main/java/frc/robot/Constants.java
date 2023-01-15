@@ -14,10 +14,13 @@ package frc.robot;
  */
 public final class Constants {
   public static class DriveTrain {
-    public static final int canMotorControllerPort00 = 40;
-    public static final int canMotorControllerPort01 = 41;
-    public static final int canMotorControllerPort02 = 42;
-    public static final int canMotorControllerPort03 = 43;
+    public static final int canMotorControllerPort00 = 9;
+    public static final int canMotorControllerPort01 = 10;
+    public static final int canMotorControllerPort02 = 11;
+    public static final int canMotorControllerPort03 = 12;
+
+    public static final double kMaxSpeed = 3.0;
+    public static final boolean speedLimiterEnabled = true;
   }
 
   public static class Joysticks {
@@ -40,6 +43,8 @@ public final class Constants {
       public static final int button09 = 9;
       public static final int button10 = 10;
       public static final int button11 = 11;
+
+      public static final int rateLimit = 3;
     }
 
     /********************************
@@ -57,6 +62,8 @@ public final class Constants {
       public static final int button09 = 9;
       public static final int button10 = 10;
       public static final int button11 = 11;
+
+      public static final int rateLimit = 3;
     }
 
     /********************************
@@ -80,5 +87,9 @@ public final class Constants {
 
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
+  }
+
+  public static class Robot {
+    
   }
 }

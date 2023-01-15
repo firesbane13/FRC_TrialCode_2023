@@ -4,11 +4,19 @@
 
 package frc.robot.subsystems;
 
+import java.util.List;
+
 import com.kauailabs.navx.frc.AHRS;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -20,36 +28,47 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class DriveTrainSubsystem extends SubsystemBase {
-    private MotorControllerGroup leftMotors;
-    private MotorControllerGroup rightMotors;
+  private MotorControllerGroup leftMotors;
+  private MotorControllerGroup rightMotors;
 
-    public MotorController motorController00;
-    public MotorController motorController01;
-    public MotorController motorController02;
-    public MotorController motorController03;
+  public MotorController motorController00;
+  public MotorController motorController01;
+  public MotorController motorController02;
+  public MotorController motorController03;
 
-    private CANSparkMax sparkMax00;
-    private CANSparkMax sparkMax01;
-    private CANSparkMax sparkMax02;
-    private CANSparkMax sparkMax03;
+  private CANSparkMax sparkMax00;
+  private CANSparkMax sparkMax01;
+  private CANSparkMax sparkMax02;
+  private CANSparkMax sparkMax03;
 
-    /*
-     * Auto-balancing taken from: https://github.com/kauailabs/navxmxp/blob/master/roborio/java/navXMXP_Java_AutoBalance/src/org/usfirst/frc/team2465/robot/Robot.java
-     */
-    private AHRS navx_device;
-    boolean autoBalanceXMode;
-    boolean autoBalanceYMode; 
+  /*
+   * Auto-balancing taken from: https://github.com/kauailabs/navxmxp/blob/master/roborio/java/navXMXP_Java_AutoBalance/src/org/usfirst/frc/team2465/robot/Robot.java
+   */
+  private AHRS navx_device;
+  boolean autoBalanceXMode;
+  boolean autoBalanceYMode; 
     
-    /**
-    * Runs the motors with arcade steering.
-    */  
-   static final double kOffBalanceAngleThresholdDegrees = 10;
-   static final double kOonBalanceAngleThresholdDegrees  = 5;
+  /**
+   * Runs the motors with arcade steering.
+   */  
+  static final double kOffBalanceAngleThresholdDegrees = 10;
+  static final double kOonBalanceAngleThresholdDegrees  = 5;
 
-    /**
-     * Real Drive Train
-     */
-    public DifferentialDrive m_drive;
+  /*
+   * Slew Rate Limiters to make Joystick inputs more gentle; 1/3 sec from 0 to 1
+   */
+  private final SlewRateLimiter m_speedLeftLimiter = new SlewRateLimiter(Constants.Joysticks.DriverLeft.rateLimit);
+  private final SlewRateLimiter m_speedRightLimiter = new SlewRateLimiter(Constants.Joysticks.DriverRight.rateLimit);
+
+  /**
+   * Real Drive Train
+   */
+  public DifferentialDrive m_drive;
+
+  /**
+   * Simluation
+   */
+  private Trajectory m_trajectory;
 
   /** Creates a new DriveTrainSubsystem. */
   public DriveTrainSubsystem() {
@@ -105,6 +124,16 @@ public class DriveTrainSubsystem extends SubsystemBase {
     m_drive = new DifferentialDrive(leftMotors, rightMotors);
 
     rightMotors.setInverted(true);
+
+    /**
+     * SIMULTATION
+     */
+    m_trajectory = TrajectoryGenerator.generateTrajectory(
+      new Pose2d(2, 2, new Rotation2d()),
+      List.of(),
+      new Pose2d(6, 4, new Rotation2d()),
+      new TrajectoryConfig(2, 2)
+    );
   }
 
   @Override
@@ -128,6 +157,11 @@ public class DriveTrainSubsystem extends SubsystemBase {
   */
   public boolean tankDrive(double leftSpeed, double rightSpeed) {
     boolean status = true;
+
+    if (Constants.DriveTrain.speedLimiterEnabled) {
+      leftSpeed = -m_speedLeftLimiter.calculate(leftSpeed) * Constants.DriveTrain.kMaxSpeed;
+      rightSpeed = -m_speedRightLimiter.calculate(rightSpeed) * Constants.DriveTrain.kMaxSpeed;
+    }
 
     SmartDashboard.putNumber("leftSpeed", leftSpeed);
     SmartDashboard.putNumber("rightSpeed", rightSpeed);
