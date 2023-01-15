@@ -11,18 +11,32 @@ import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.math.system.LinearSystem;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.simulation.AnalogGyroSim;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
+import edu.wpi.first.wpilibj.simulation.EncoderSim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -60,6 +74,12 @@ public class DriveTrainSubsystem extends SubsystemBase {
   private final SlewRateLimiter m_speedLeftLimiter = new SlewRateLimiter(Constants.Joysticks.DriverLeft.rateLimit);
   private final SlewRateLimiter m_speedRightLimiter = new SlewRateLimiter(Constants.Joysticks.DriverRight.rateLimit);
 
+  /*
+   * PID
+   */
+   private final PIDController m_leftPIDController = new PIDController(8.5, 0, 0);
+   private final PIDController m_rightPIDController = new PIDController(8.5, 0, 0);
+
   /**
    * Real Drive Train
    */
@@ -68,7 +88,66 @@ public class DriveTrainSubsystem extends SubsystemBase {
   /**
    * Simluation
    */
+  // Used to calculate speed
+  private final SimpleMotorFeedforward m_feedforward = new SimpleMotorFeedforward(
+    Constants.Robot.staticGain, 
+    Constants.Robot.velocityGain
+  );
+
+  // Temp Encoders for now
+  private final Encoder m_leftEncoder = new Encoder(
+    Constants.Simulation.leftEncoderChannelA, 
+    Constants.Simulation.leftEncoderChannelB
+  );
+
+  private final Encoder m_rightEncoder = new Encoder(
+    Constants.Simulation.rightEncoderChannelA, 
+    Constants.Simulation.rightEncoderChannelB
+  );
+
+  // Simulation Encoders
+  private final EncoderSim m_leftEncoderSim = new EncoderSim(m_leftEncoder);
+  private final EncoderSim m_rightEncoderSim = new EncoderSim(m_rightEncoder);
+
+  // Temp gyroscope
+  private final AnalogGyro m_gyro = new AnalogGyro(Constants.Simulation.gyroPort);
+
+  // Simulation gyroscope
+  private final AnalogGyroSim m_gryoSim = new AnalogGyroSim(m_gyro);
+
+  // Used to calculate robot trajectory
   private Trajectory m_trajectory;
+
+  // Timer used for various 
+  private final Timer m_timer = new Timer();
+
+  private final DifferentialDriveKinematics m_kinematics =
+      new DifferentialDriveKinematics
+      (Constants.Robot.kTrackWidth);
+
+  private final DifferentialDriveOdometry m_odometry = new DifferentialDriveOdometry(
+    m_gyro.getRotation2d(), 
+    m_leftEncoder.getDistance(), 
+    m_rightEncoder.getDistance()
+  );
+
+  private final Field2d m_fieldSim = new Field2d();
+  private final LinearSystem<N2, N2, N2> m_drivetrainSystem =
+      LinearSystemId.identifyDrivetrainSystem(
+        Constants.Robot.kVLinear, 
+        Constants.Robot.kALinear, 
+        Constants.Robot.kVAngular, 
+        Constants.Robot.kAAngular
+      );
+  private final DifferentialDrivetrainSim m_drivetrainSimulator =
+      new DifferentialDrivetrainSim(
+          m_drivetrainSystem, 
+          DCMotor.getNEO(Constants.Robot.numOfMotors), 
+          Constants.Robot.gearing, 
+          Constants.Robot.kTrackWidth, 
+          Constants.Robot.kWheelRadius, 
+          Constants.Robot.measurementStdDevs
+      );
 
   /** Creates a new DriveTrainSubsystem. */
   public DriveTrainSubsystem() {
@@ -134,6 +213,14 @@ public class DriveTrainSubsystem extends SubsystemBase {
       new Pose2d(6, 4, new Rotation2d()),
       new TrajectoryConfig(2, 2)
     );
+
+    m_leftEncoder.setDistancePerPulse(2 * Math.PI * Constants.Robot.kWheelRadius / Constants.Robot.kEncoderResolution);
+    m_rightEncoder.setDistancePerPulse(2 * Math.PI * Constants.Robot.kWheelRadius / Constants.Robot.kEncoderResolution);
+
+    m_leftEncoder.reset();
+    m_rightEncoder.reset();
+
+    SmartDashboard.putData("Field", m_fieldSim);
   }
 
   @Override
@@ -141,10 +228,26 @@ public class DriveTrainSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
   }
 
+  public void autonomousInit() {
+    m_timer.reset();
+    m_timer.start();
+  }
+
+  public void autonomousPeriodic() {
+    // 
+  }
+
+  public void simulationInit() {
+  }
+
   @Override
   public void simulationPeriodic() {
   }
 
+
+  public void resetOdometry() {
+
+  }
 
   /**
    * tankDrive()
@@ -162,6 +265,7 @@ public class DriveTrainSubsystem extends SubsystemBase {
       leftSpeed = -m_speedLeftLimiter.calculate(leftSpeed) * Constants.DriveTrain.kMaxSpeed;
       rightSpeed = -m_speedRightLimiter.calculate(rightSpeed) * Constants.DriveTrain.kMaxSpeed;
     }
+
 
     SmartDashboard.putNumber("leftSpeed", leftSpeed);
     SmartDashboard.putNumber("rightSpeed", rightSpeed);
