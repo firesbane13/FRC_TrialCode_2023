@@ -9,6 +9,7 @@ import java.util.List;
 import com.kauailabs.navx.frc.AHRS;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -40,6 +41,11 @@ public class DriveTrainSubsystem extends SubsystemBase {
   private CANSparkMax sparkMax01;
   private CANSparkMax sparkMax02;
   private CANSparkMax sparkMax03;
+  
+  private RelativeEncoder encoder00;
+  private RelativeEncoder encoder01;
+  private RelativeEncoder encoder02;
+  private RelativeEncoder encoder03;
 
   /*
    * Auto-balancing taken from: https://github.com/kauailabs/navxmxp/blob/master/roborio/java/navXMXP_Java_AutoBalance/src/org/usfirst/frc/team2465/robot/Robot.java
@@ -121,6 +127,11 @@ public class DriveTrainSubsystem extends SubsystemBase {
       motorController03
     );
 
+    encoder00 = sparkMax00.getEncoder();
+    encoder01 = sparkMax01.getEncoder();
+    encoder02 = sparkMax02.getEncoder();
+    encoder03 = sparkMax03.getEncoder();
+
     m_drive = new DifferentialDrive(leftMotors, rightMotors);
 
     rightMotors.setInverted(true);
@@ -165,6 +176,10 @@ public class DriveTrainSubsystem extends SubsystemBase {
 
     SmartDashboard.putNumber("leftSpeed", leftSpeed);
     SmartDashboard.putNumber("rightSpeed", rightSpeed);
+    SmartDashboard.putNumber("Encoder00", encoder00.getPosition());
+    SmartDashboard.putNumber("Encoder01", encoder01.getPosition());
+    SmartDashboard.putNumber("Encoder02", encoder02.getPosition());
+    SmartDashboard.putNumber("Encoder03", encoder03.getPosition());
 
     m_drive.tankDrive(leftSpeed, rightSpeed);
 

@@ -34,6 +34,7 @@ public class RobotContainer {
   public CommandJoystick driveControllerRight = new CommandJoystick(Constants.Joysticks.driveControllerRightUsbPort);
   public CommandJoystick secondaryDriveController = new CommandJoystick(Constants.Joysticks.secondaryDriveControlerUsbPort);
 
+  public CommandJoystick testController = new CommandJoystick(5);
   /**********************************
    * COMMANDS
    **********************************/
@@ -78,6 +79,7 @@ public class RobotContainer {
       autobalanceCommand
     );
     
+    /* 
     driveTrainSubsystem.setDefaultCommand(
       new RunCommand(
         () -> 
@@ -87,6 +89,17 @@ public class RobotContainer {
           ),
         driveTrainSubsystem)
       );
+      */
+
+      driveTrainSubsystem.setDefaultCommand(
+        new RunCommand(
+          () -> 
+            driveTrainSubsystem.tankDrive(
+              testController.getRawAxis(1),
+              testController.getRawAxis(5)
+            ),
+          driveTrainSubsystem)
+        );
   }
 
   /**
