@@ -8,7 +8,7 @@ import frc.robot.commands.Autos;
 import frc.robot.commands.drive.AutobalanceCommand;
 import frc.robot.subsystems.DriveTrainSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
@@ -35,6 +35,8 @@ public class RobotContainer {
   public CommandJoystick secondaryDriveController = new CommandJoystick(Constants.Joysticks.secondaryDriveControlerUsbPort);
 
   public CommandJoystick testController = new CommandJoystick(5);
+  // public CommandJoystick testController = new CommandJoystick(0);
+
   /**********************************
    * COMMANDS
    **********************************/
@@ -75,7 +77,7 @@ public class RobotContainer {
     m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
     */
 
-    secondaryDriveController.button(Constants.Joysticks.SecondaryDriver.autoBalanceForce).whileTrue(
+    testController.button(2).whileTrue(
       autobalanceCommand
     );
     
@@ -84,9 +86,11 @@ public class RobotContainer {
       new RunCommand(
         () -> 
           driveTrainSubsystem.tankDrive(
-            driveControllerLeft.getY(),
-            driveControllerRight.getY()
-          ),
+            testController.getRawAxis(1),
+            testController.getRawAxis(3)
+
+
+            ),
         driveTrainSubsystem)
       );
       */

@@ -20,6 +20,7 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
@@ -83,7 +84,8 @@ public class DriveTrainSubsystem extends SubsystemBase {
      *********************************/
     try {
       if (RobotBase.isReal()) {
-        navx_device = new AHRS();
+        Byte refreshHertz = 6;
+         navx_device = new AHRS(SerialPort.Port.kUSB);
       }
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating navX MXP", true);
@@ -245,8 +247,17 @@ public class DriveTrainSubsystem extends SubsystemBase {
       yAxisRate = Math.sin(pitchAngleRadians) * -1;
     }
 
+
+    SmartDashboard.putNumber("X axis rate", xAxisRate);
+    SmartDashboard.putNumber("Y axis rate", yAxisRate);
+    SmartDashboard.putBoolean("Autobalance Y mode", autoBalanceYMode);
+    SmartDashboard.putBoolean("Autobalance X mode", autoBalanceXMode);
+    SmartDashboard.putNumber("Roll angle degrees", rollAngleDegrees);
+    SmartDashboard.putNumber("Pitch angle degrees", pitchAngleDegrees);
+
     try {
-      m_drive.arcadeDrive(yAxisRate, xAxisRate);
+       m_drive.arcadeDrive(yAxisRate, xAxisRate);
+
     } catch(RuntimeException ex) {
       String err_string = "Drive system error:  " + ex.getMessage();
       DriverStation.reportError(err_string, true);
