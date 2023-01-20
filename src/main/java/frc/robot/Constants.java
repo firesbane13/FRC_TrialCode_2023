@@ -21,6 +21,18 @@ public final class Constants {
 
     public static final double kMaxSpeed = 3.0;
     public static final boolean speedLimiterEnabled = true;
+
+    /******
+     * PID
+     */
+    public static final double kP = 5e-5;
+    public static final double kI = 1e-6;
+    public static final double kD = 0;
+    public static final double kIz = 0;
+    public static final double kFF = 0.000156;
+    public static final double kMaxOutput = 1;
+    public static final double kMinOutput = -1;
+    public static final double maxRPM = 5700;
   }
 
   public static class Joysticks {

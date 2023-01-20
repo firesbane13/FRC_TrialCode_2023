@@ -7,10 +7,10 @@ package frc.robot.subsystems;
 import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
-
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -48,6 +48,11 @@ public class DriveTrainSubsystem extends SubsystemBase {
   private RelativeEncoder encoder02;
   private RelativeEncoder encoder03;
 
+  private SparkMaxPIDController pidController00;
+  private SparkMaxPIDController pidController01;
+  private SparkMaxPIDController pidController02;
+  private SparkMaxPIDController pidController03;
+
   /*
    * Auto-balancing taken from: https://github.com/kauailabs/navxmxp/blob/master/roborio/java/navXMXP_Java_AutoBalance/src/org/usfirst/frc/team2465/robot/Robot.java
    */
@@ -77,6 +82,15 @@ public class DriveTrainSubsystem extends SubsystemBase {
    */
   private Trajectory m_trajectory;
 
+  /**
+   * PID
+   */
+  
+    public double maxVel;
+    public double minVel;
+    public double maxAcc;
+    public double allowedErr;
+
   /** Creates a new DriveTrainSubsystem. */
   public DriveTrainSubsystem() {
     /*********************************
@@ -84,7 +98,6 @@ public class DriveTrainSubsystem extends SubsystemBase {
      *********************************/
     try {
       if (RobotBase.isReal()) {
-        Byte refreshHertz = 6;
          navx_device = new AHRS(SerialPort.Port.kUSB);
       }
     } catch (RuntimeException ex) {
@@ -129,10 +142,27 @@ public class DriveTrainSubsystem extends SubsystemBase {
       motorController03
     );
 
+    sparkMax02.setInverted(true);
+    sparkMax03.setInverted(true);
+
     encoder00 = sparkMax00.getEncoder();
     encoder01 = sparkMax01.getEncoder();
     encoder02 = sparkMax02.getEncoder();
     encoder03 = sparkMax03.getEncoder();
+
+    pidController00 = sparkMax00.getPIDController();
+    pidController01 = sparkMax01.getPIDController();
+    pidController02 = sparkMax02.getPIDController();
+    pidController03 = sparkMax03.getPIDController();
+
+    pidController00.setP(Constants.DriveTrain.kP);
+    pidController00.setI(Constants.DriveTrain.kI);
+    pidController00.setD(Constants.DriveTrain.kD);
+    pidController00.setIZone(Constants.DriveTrain.kIz);
+    pidController00.setFF(Constants.DriveTrain.kFF);
+    pidController00.setI(Constants.DriveTrain.kI);
+    pidController00.setI(Constants.DriveTrain.kI);
+    pidController00.setI(Constants.DriveTrain.kI);
 
     m_drive = new DifferentialDrive(leftMotors, rightMotors);
 
