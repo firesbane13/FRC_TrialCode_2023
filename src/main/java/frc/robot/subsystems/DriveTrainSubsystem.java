@@ -8,6 +8,8 @@ import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
@@ -85,11 +87,11 @@ public class DriveTrainSubsystem extends SubsystemBase {
   /**
    * PID
    */
-  
-    public double maxVel;
-    public double minVel;
-    public double maxAcc;
-    public double allowedErr;
+  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
+
+  /**
+   * PID
+   */
 
   /** Creates a new DriveTrainSubsystem. */
   public DriveTrainSubsystem() {
@@ -98,7 +100,7 @@ public class DriveTrainSubsystem extends SubsystemBase {
      *********************************/
     try {
       if (RobotBase.isReal()) {
-         navx_device = new AHRS(SerialPort.Port.kUSB);
+        navx_device = new AHRS(SerialPort.Port.kUSB);
       }
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating navX MXP", true);
@@ -122,10 +124,14 @@ public class DriveTrainSubsystem extends SubsystemBase {
       MotorType.kBrushless
     );
 
+    sparkMax02.setInverted(true);
+
     sparkMax03 = new CANSparkMax(
       Constants.DriveTrain.canMotorControllerPort03, 
       MotorType.kBrushless
     );
+
+    sparkMax03.setInverted(true);
 
     motorController00 = sparkMax00;
     motorController01 = sparkMax01;
@@ -160,13 +166,15 @@ public class DriveTrainSubsystem extends SubsystemBase {
     pidController00.setD(Constants.DriveTrain.kD);
     pidController00.setIZone(Constants.DriveTrain.kIz);
     pidController00.setFF(Constants.DriveTrain.kFF);
-    pidController00.setI(Constants.DriveTrain.kI);
-    pidController00.setI(Constants.DriveTrain.kI);
-    pidController00.setI(Constants.DriveTrain.kI);
 
     m_drive = new DifferentialDrive(leftMotors, rightMotors);
 
-    rightMotors.setInverted(true);
+    // rightMotors.setInverted(true);
+
+    pidController00 = sparkMax00.getPIDController();
+    pidController01 = sparkMax01.getPIDController();
+    pidController02 = sparkMax02.getPIDController();
+    pidController03 = sparkMax03.getPIDController();
 
     /**
      * SIMULTATION
