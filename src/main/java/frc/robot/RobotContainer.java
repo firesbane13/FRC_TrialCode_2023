@@ -98,10 +98,10 @@ public class RobotContainer {
       driveTrainSubsystem.setDefaultCommand(
         new RunCommand(
           () -> 
-            driveTrainSubsystem.tankDrive(
+            driveTrainSubsystem.drive(
               testController.getRawAxis(1),
               testController.getRawAxis(5)
-            ),
+             ),
           driveTrainSubsystem)
         );
   }

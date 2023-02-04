@@ -33,6 +33,27 @@ public final class Constants {
     public static final double kMaxOutput = 1;
     public static final double kMinOutput = -1;
     public static final double maxRPM = 5700;
+
+    /******
+     * Self Drive Train
+     */
+    // Used to low levels of input from the joysticks
+    public static final double kDefaultDeadband = 0.02;
+
+    // Used to change max value if needed.
+    public static final double kDefaultMaxOutput = 1.0;
+
+    /******
+     * Auto-balance Constants
+     */
+    public static final double wheelDiameter = 8.0;
+    public static final double platformWidth = 48.0;
+    public static final double robotLength = 28.0;
+    public static final double minAngle = 0.0;
+    public static final double maxAngle = 15.0;
+    public static final double minMovementSpeed = 0.3;
+    public static final double maxMovementSpeed = 0.7;
+    public static final double brakeAdjustment = 0.5;
   }
 
   public static class Joysticks {

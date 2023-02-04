@@ -14,6 +14,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -21,10 +22,12 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive.WheelSpeeds;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -90,8 +93,24 @@ public class DriveTrainSubsystem extends SubsystemBase {
   public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput, maxRPM, maxVel, minVel, maxAcc, allowedErr;
 
   /**
-   * PID
+   * Autobalance
    */
+  public double wheelDiameter = Constants.DriveTrain.wheelDiameter;
+  public double platformWidth = Constants.DriveTrain.platformWidth;
+  public double robotLength = Constants.DriveTrain.robotLength;
+  public double minAngle = Constants.DriveTrain.minAngle;
+  public double maxAngle = Constants.DriveTrain.maxAngle;
+  public double minMovementSpeed = Constants.DriveTrain.minMovementSpeed;
+  public double maxMovementSpeed = Constants.DriveTrain.maxMovementSpeed;
+  
+  public double rotationsPerInch = 1 / (wheelDiameter * Math.PI);
+  public double distanceToEdge = platformWidth - ((platformWidth - robotLength) / 2);
+  public double rotationsToBalance = distanceToEdge * rotationsPerInch;
+
+  public double slope = (maxMovementSpeed - minMovementSpeed) / (maxAngle - minAngle);
+
+  public double rotationsNeededLeft = 0.0;
+  public double rotationsNeededRight = 0.0;
 
   /** Creates a new DriveTrainSubsystem. */
   public DriveTrainSubsystem() {
@@ -133,33 +152,14 @@ public class DriveTrainSubsystem extends SubsystemBase {
 
     sparkMax03.setInverted(true);
 
-    motorController00 = sparkMax00;
-    motorController01 = sparkMax01;
-    motorController02 = sparkMax02;
-    motorController03 = sparkMax03;
-
-    leftMotors = new MotorControllerGroup(
-      motorController00,
-      motorController01
-    );
-
-    rightMotors = new MotorControllerGroup(
-      motorController02,
-      motorController03
-    );
-
-    sparkMax02.setInverted(true);
-    sparkMax03.setInverted(true);
+    sparkMax01.follow(sparkMax00);
+    sparkMax03.follow(sparkMax02);
 
     encoder00 = sparkMax00.getEncoder();
-    encoder01 = sparkMax01.getEncoder();
     encoder02 = sparkMax02.getEncoder();
-    encoder03 = sparkMax03.getEncoder();
 
     pidController00 = sparkMax00.getPIDController();
-    pidController01 = sparkMax01.getPIDController();
     pidController02 = sparkMax02.getPIDController();
-    pidController03 = sparkMax03.getPIDController();
 
     pidController00.setP(Constants.DriveTrain.kP);
     pidController00.setI(Constants.DriveTrain.kI);
@@ -167,14 +167,13 @@ public class DriveTrainSubsystem extends SubsystemBase {
     pidController00.setIZone(Constants.DriveTrain.kIz);
     pidController00.setFF(Constants.DriveTrain.kFF);
 
-    m_drive = new DifferentialDrive(leftMotors, rightMotors);
+    pidController01.setP(Constants.DriveTrain.kP);
+    pidController01.setI(Constants.DriveTrain.kI);
+    pidController01.setD(Constants.DriveTrain.kD);
+    pidController01.setIZone(Constants.DriveTrain.kIz);
+    pidController01.setFF(Constants.DriveTrain.kFF);
 
     // rightMotors.setInverted(true);
-
-    pidController00 = sparkMax00.getPIDController();
-    pidController01 = sparkMax01.getPIDController();
-    pidController02 = sparkMax02.getPIDController();
-    pidController03 = sparkMax03.getPIDController();
 
     /**
      * SIMULTATION
@@ -196,36 +195,42 @@ public class DriveTrainSubsystem extends SubsystemBase {
   public void simulationPeriodic() {
   }
 
-
   /**
-   * tankDrive()
+   * drive()
    * 
-   * Functionality to implement tank drive.
+   * Custom drive functionality
    * 
-   * @param leftSpeed
-   * @param rightSpeed
-   * @return
-  */
-  public boolean tankDrive(double leftSpeed, double rightSpeed) {
-    boolean status = true;
+   * @param joystickLeftSpeed
+   * @param joystickRightSpeed
+   */
+  public void drive(double joystickLeftSpeed, double joystickRightSpeed) {
+    double m_deadband = Constants.DriveTrain.kDefaultDeadband;
+    double m_maxOutput = Constants.DriveTrain.kDefaultMaxOutput;
 
-    if (Constants.DriveTrain.speedLimiterEnabled) {
-      leftSpeed = -m_speedLeftLimiter.calculate(leftSpeed) * Constants.DriveTrain.kMaxSpeed;
-      rightSpeed = -m_speedRightLimiter.calculate(rightSpeed) * Constants.DriveTrain.kMaxSpeed;
-    }
+    // Used to set 0.0 if joysticks withing the deadband area
+    double leftSpeed = MathUtil.applyDeadband(joystickLeftSpeed, m_deadband);
+    double rightSpeed = MathUtil.applyDeadband(joystickRightSpeed, m_deadband);
 
-    SmartDashboard.putNumber("leftSpeed", leftSpeed);
-    SmartDashboard.putNumber("rightSpeed", rightSpeed);
-    SmartDashboard.putNumber("Encoder00", encoder00.getPosition());
-    SmartDashboard.putNumber("Encoder01", encoder01.getPosition());
-    SmartDashboard.putNumber("Encoder02", encoder02.getPosition());
-    SmartDashboard.putNumber("Encoder03", encoder03.getPosition());
+    WheelSpeeds wheelSpeeds; 
 
-    m_drive.tankDrive(leftSpeed, rightSpeed);
+    // Limit Max Speed
+    leftSpeed = MathUtil.clamp(leftSpeed, -1.0, 1.0);
+    rightSpeed = MathUtil.clamp(rightSpeed, -1.0, 1.0);
 
-    return status;
+    // This might not be needed, but it's in the DifferentialDrive code
+    wheelSpeeds = new WheelSpeeds(leftSpeed, rightSpeed);
+
+    // Set the value on the leader motors.
+    sparkMax00.set(wheelSpeeds.left * m_maxOutput);
+    sparkMax02.set(wheelSpeeds.right * m_maxOutput);
+
+    return;
   }
   
+  public void autoBalanceInitialize() {
+    rotationsNeededLeft = encoder00.getPosition() + rotationsToBalance;
+    rotationsNeededRight = encoder02.getPosition() + rotationsToBalance;
+  }
 
   /**
    * autoBalance()
@@ -239,67 +244,51 @@ public class DriveTrainSubsystem extends SubsystemBase {
   public boolean autoBalance() {
     boolean status = true;
 
-    double xAxisRate = 0.0;
-    double yAxisRate = 0.0;
+    double brakeAdjustment = Constants.DriveTrain.brakeAdjustment;
 
-    // Retrieve robot angle in 3D space
+    // Y-axis rotation
     double pitchAngleDegrees = navx_device.getPitch();
+
+    // X-axis rotation
     double rollAngleDegrees = navx_device.getRoll();
 
-    if ( !autoBalanceXMode && 
-      (Math.abs(rollAngleDegrees) >= 
-        Math.abs(kOffBalanceAngleThresholdDegrees))
-    ) {
-      autoBalanceXMode = true;
-    } else if ( autoBalanceXMode && 
-      (Math.abs(rollAngleDegrees) <= 
-        Math.abs(kOonBalanceAngleThresholdDegrees))
-    ) {
-      autoBalanceXMode = false;
-    }
+    rollAngleDegrees = MathUtil.applyDeadband(rollAngleDegrees, 0.05);
 
-    if ( !autoBalanceYMode && 
-      (Math.abs(pitchAngleDegrees) >= 
-        Math.abs(kOffBalanceAngleThresholdDegrees))
-    ) {
-      autoBalanceYMode = true;
-    } else if ( autoBalanceYMode && 
-      (Math.abs(pitchAngleDegrees) <= 
-        Math.abs(kOonBalanceAngleThresholdDegrees))
-    ) {
-      autoBalanceYMode = false;
-    }
+    if (rollAngleDegrees != 0.0) {
+      double radiansPerAngle = (slope * rollAngleDegrees);
 
-    /* 
-     * Control drive system automatically, 
-     * driving in reverse direction of pitch/roll angle,
-     * with a magnitude based upon the angle
-     */
-    if ( autoBalanceXMode ) {
-      double rollAngleRadians = rollAngleDegrees * (Math.PI / 180.0);
-      xAxisRate = Math.sin(rollAngleRadians) * -1;
-    }
+      double direction = 1.0;
+      if (rollAngleDegrees < 0.0) {
+        direction = -1.0;
+      }
 
-    if ( autoBalanceYMode ) {
-      double pitchAngleRadians = pitchAngleDegrees * (Math.PI / 180.0);
-      yAxisRate = Math.sin(pitchAngleRadians) * -1;
-    }
+      radiansPerAngle = radiansPerAngle + (minMovementSpeed * direction);
 
+      try {
+        double encoder00Position = encoder00.getPosition();
+        double encoder02Position = encoder02.getPosition();
 
-    SmartDashboard.putNumber("X axis rate", xAxisRate);
-    SmartDashboard.putNumber("Y axis rate", yAxisRate);
-    SmartDashboard.putBoolean("Autobalance Y mode", autoBalanceYMode);
-    SmartDashboard.putBoolean("Autobalance X mode", autoBalanceXMode);
-    SmartDashboard.putNumber("Roll angle degrees", rollAngleDegrees);
-    SmartDashboard.putNumber("Pitch angle degrees", pitchAngleDegrees);
+        double leftSpeed;
+        if (encoder00Position >= rotationsNeededLeft) {
+          leftSpeed = radiansPerAngle - (brakeAdjustment * direction);
+        } else {
+          leftSpeed = radiansPerAngle;
+        }
 
-    try {
-       m_drive.arcadeDrive(yAxisRate, xAxisRate);
+        double rightSpeed;
+        if (encoder02Position >= rotationsNeededRight) {
+          rightSpeed = radiansPerAngle - (brakeAdjustment * direction);
+        } else {
+          rightSpeed = radiansPerAngle;
+        }
 
-    } catch(RuntimeException ex) {
-      String err_string = "Drive system error:  " + ex.getMessage();
-      DriverStation.reportError(err_string, true);
-      status = false;
+        drive(leftSpeed, rightSpeed);
+
+      } catch(RuntimeException ex) {
+        String err_string = "Drive system error:  " + ex.getMessage();
+        DriverStation.reportError(err_string, true);
+        status = false;
+      }
     }
     
     Timer.delay(0.005);
